@@ -83,7 +83,6 @@ class IMAPService extends events_1.EventEmitter {
                     resolve();
                     return;
                 }
-                // Fetch latest 100 emails for demo (to avoid slow initial sync)
                 const start = Math.max(1, box.messages.total - 100);
                 const end = box.messages.total;
                 logger_1.logger.info(`Fetching latest 100 emails (${start}:${end}) for ${this.account.user}`);

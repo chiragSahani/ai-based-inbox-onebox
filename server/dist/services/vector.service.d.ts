@@ -1,9 +1,5 @@
+import { ProductData } from '../config/seed-data';
 import { AIService } from './ai.service';
-export interface ProductData {
-    id: string;
-    text: string;
-    metadata?: Record<string, any>;
-}
 export declare class VectorService {
     private client;
     private aiService;

@@ -17,7 +17,6 @@ import {
   sanitizeRequest,
   securityHeaders,
 } from './middlewares/security.middleware';
-// import { apiLimiter } from './middlewares/ratelimit.middleware';
 import { errorHandler, notFound, handleUncaughtException, handleUnhandledRejection } from './middlewares/error.middleware';
 import { httpLogger, requestId, performanceMonitor } from './middlewares/logger.middleware';
 
@@ -77,29 +76,13 @@ class Application {
       this.app.use(httpLogger);
       this.app.use(performanceMonitor);
 
-      // Trust proxy (for rate limiting behind load balancer)
       this.app.set('trust proxy', 1);
 
-      // API rate limiting - DISABLED
-      // this.app.use('/api', apiLimiter);
+      this.app.use('/api/health', createHealthRoutes(this.esService));
+      this.app.use('/api/accounts', createAccountRoutes());
+      this.app.use('/api/emails', createEmailRoutes(this.esService, this.vectorService, this.aiService));
+      this.app.use('/api/notifications', createNotificationRoutes(this.notificationService));
 
-      // Health check routes (no rate limit)
-      const healthRoutes = createHealthRoutes(this.esService);
-      this.app.use('/api/health', healthRoutes);
-
-      // Account routes
-      const accountRoutes = createAccountRoutes();
-      this.app.use('/api/accounts', accountRoutes);
-
-      // Email routes
-      const emailRoutes = createEmailRoutes(this.esService, this.vectorService, this.aiService);
-      this.app.use('/api/emails', emailRoutes);
-
-      // Notification routes
-      const notificationRoutes = createNotificationRoutes(this.notificationService);
-      this.app.use('/api/notifications', notificationRoutes);
-
-      // Root endpoint
       this.app.get('/', (req, res) => {
         res.json({
           success: true,

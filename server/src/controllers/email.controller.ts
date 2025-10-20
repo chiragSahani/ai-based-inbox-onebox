@@ -12,20 +12,15 @@ export class EmailController {
     private aiService: AIService
   ) {}
 
-  // Get all emails with pagination
   getEmails = asyncHandler(async (req: Request, res: Response) => {
     const page = parseInt(req.validatedData?.page || "1");
     const pageSize = parseInt(req.validatedData?.pageSize || "20");
     const from = (page - 1) * pageSize;
 
-    const result = await this.esService.searchEmails(
-      undefined,
-      undefined,
-      undefined,
-      undefined,
+    const result = await this.esService.searchEmails({
       from,
-      pageSize
-    );
+      size: pageSize,
+    });
 
     res.status(200).json({
       success: true,
@@ -41,7 +36,6 @@ export class EmailController {
     });
   });
 
-  // Search and filter emails
   searchEmails = asyncHandler(async (req: Request, res: Response) => {
     const {
       q,
@@ -54,14 +48,14 @@ export class EmailController {
 
     const from = (page - 1) * pageSize;
 
-    const result = await this.esService.searchEmails(
-      q,
-      account,
+    const result = await this.esService.searchEmails({
+      query: q,
+      accountId: account,
       folder,
-      category,
+      aiCategory: category,
       from,
-      pageSize
-    );
+      size: pageSize,
+    });
 
     logger.info({
       message: "Email search performed",

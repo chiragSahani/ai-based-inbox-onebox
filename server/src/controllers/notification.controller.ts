@@ -1,76 +1,50 @@
-import { Request, Response, NextFunction } from 'express';
+import { Request, Response } from 'express';
 import { NotificationService } from '../services/notification.service';
-import { logger } from '../utils/logger';
+import { asyncHandler, AppError } from '../middlewares/error.middleware';
 
 export class NotificationController {
   constructor(private notificationService: NotificationService) {}
 
-  async getAllNotifications(req: Request, res: Response, next: NextFunction): Promise<void> {
-    try {
-      const notifications = this.notificationService.getAllNotifications();
-      res.json({
-        success: true,
-        data: { notifications },
-      });
-    } catch (error) {
-      logger.error({ err: error }, 'Failed to get notifications');
-      next(error);
+  getAllNotifications = asyncHandler(async (req: Request, res: Response) => {
+    const notifications = this.notificationService.getAllNotifications();
+    res.json({
+      success: true,
+      data: { notifications },
+    });
+  });
+
+  getUnreadNotifications = asyncHandler(async (req: Request, res: Response) => {
+    const notifications = this.notificationService.getUnreadNotifications();
+    res.json({
+      success: true,
+      data: { notifications, count: notifications.length },
+    });
+  });
+
+  markAsRead = asyncHandler(async (req: Request, res: Response) => {
+    const { id } = req.params;
+
+    if (!id) {
+      throw new AppError('Notification ID is required', 400);
     }
-  }
 
-  async getUnreadNotifications(req: Request, res: Response, next: NextFunction): Promise<void> {
-    try {
-      const notifications = this.notificationService.getUnreadNotifications();
-      res.json({
-        success: true,
-        data: { notifications, count: notifications.length },
-      });
-    } catch (error) {
-      logger.error({ err: error }, 'Failed to get unread notifications');
-      next(error);
+    const success = this.notificationService.markAsRead(id);
+
+    if (!success) {
+      throw new AppError('Notification not found', 404);
     }
-  }
 
-  async markAsRead(req: Request, res: Response, next: NextFunction): Promise<void> {
-    try {
-      const { id } = req.params;
-      if (!id) {
-        res.status(400).json({
-          success: false,
-          message: 'Notification ID is required',
-        });
-        return;
-      }
-      const success = this.notificationService.markAsRead(id);
+    res.json({
+      success: true,
+      message: 'Notification marked as read',
+    });
+  });
 
-      if (!success) {
-        res.status(404).json({
-          success: false,
-          message: 'Notification not found',
-        });
-        return;
-      }
-
-      res.json({
-        success: true,
-        message: 'Notification marked as read',
-      });
-    } catch (error) {
-      logger.error({ err: error }, 'Failed to mark notification as read');
-      next(error);
-    }
-  }
-
-  async clearAll(req: Request, res: Response, next: NextFunction): Promise<void> {
-    try {
-      this.notificationService.clearAll();
-      res.json({
-        success: true,
-        message: 'All notifications cleared',
-      });
-    } catch (error) {
-      logger.error({ err: error }, 'Failed to clear notifications');
-      next(error);
-    }
-  }
+  clearAll = asyncHandler(async (req: Request, res: Response) => {
+    this.notificationService.clearAll();
+    res.json({
+      success: true,
+      message: 'All notifications cleared',
+    });
+  });
 }

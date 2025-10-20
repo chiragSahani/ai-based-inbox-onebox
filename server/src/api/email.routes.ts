@@ -1,12 +1,6 @@
 import { Router } from "express";
 import { EmailController } from "../controllers/email.controller";
-import { validate } from "../validators/email.validator";
-import {
-  searchEmailsSchema,
-  emailIdSchema,
-  suggestReplySchema,
-} from "../validators/email.validator";
-// import { searchLimiter, aiOperationsLimiter } from '../middlewares/ratelimit.middleware';
+import { validate, searchEmailsSchema, emailIdSchema, suggestReplySchema } from "../validators/email.validator";
 import { ElasticsearchService } from "../services/elasticsearch.service";
 import { VectorService } from "../services/vector.service";
 import { AIService } from "../services/ai.service";

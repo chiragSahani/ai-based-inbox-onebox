@@ -3,34 +3,34 @@ import { EmailDocument } from '../types';
 import { logger } from '../utils/logger';
 
 export class WebhookService {
-  // Track sent webhooks for idempotency (dedupe by message-id)
+ 
   private sentWebhooks: Set<string> = new Set();
 
   async notifyInterested(email: EmailDocument): Promise<void> {
     try {
-      // Check feature flag
+    
       if (!config.features.webhooks) {
         logger.info('Webhooks disabled via feature flag');
         return;
       }
 
-      // Idempotent check: prevent duplicate webhooks for same email
+     
       const eventId = `interested_${email.id}`;
       if (this.sentWebhooks.has(eventId)) {
         logger.info(`Webhook already sent for email: ${email.id}, skipping...`);
         return;
       }
 
-      // Send Slack notification
+  
       await this.sendSlackNotification(email, eventId);
 
-      // Send generic webhook
+     
       await this.sendGenericWebhook(email, eventId);
 
-      // Mark as sent
+ 
       this.sentWebhooks.add(eventId);
 
-      // Clean up old entries (keep last 10000)
+      
       if (this.sentWebhooks.size > 10000) {
         const entries = Array.from(this.sentWebhooks);
         this.sentWebhooks = new Set(entries.slice(-5000));
@@ -48,13 +48,13 @@ export class WebhookService {
 
     try {
       const payload = {
-        text: `🎯 New Interested Lead!`,
+        text: ` New Interested Lead!`,
         blocks: [
           {
             type: 'header',
             text: {
               type: 'plain_text',
-              text: '🎯 New Interested Lead Detected',
+              text: ' New Interested Lead Detected',
             },
           },
           {

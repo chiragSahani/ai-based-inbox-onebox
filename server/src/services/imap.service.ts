@@ -93,7 +93,6 @@ export class IMAPService extends EventEmitter {
           return;
         }
 
-        // Fetch latest 100 emails for demo (to avoid slow initial sync)
         const start = Math.max(1, box.messages.total - 100);
         const end = box.messages.total;
 

@@ -71,17 +71,37 @@ class ElasticsearchService {
             throw error;
         }
     }
-    async searchEmails(query, accountId, folder, aiCategory, from = 0, size = 20) {
+    async updateEmail(emailId, updates) {
+        try {
+            await this.client.update({
+                index: this.indexName,
+                id: emailId,
+                doc: updates,
+            });
+            logger_1.logger.info(`Email updated: ${emailId}`);
+        }
+        catch (error) {
+            logger_1.logger.error({ err: error }, `Failed to update email: ${emailId}`);
+            throw error;
+        }
+    }
+    async searchEmails(params) {
+        const { query, accountId, folder, aiCategory, from = 0, size = 20, sort = [{ date: 'desc' }], } = params;
         try {
             const must = [];
             const filter = [];
             if (query) {
-                must.push({
-                    multi_match: {
-                        query,
-                        fields: ['subject', 'body'],
-                    },
-                });
+                if (typeof query === 'string') {
+                    must.push({
+                        multi_match: {
+                            query,
+                            fields: ['subject', 'body'],
+                        },
+                    });
+                }
+                else {
+                    return await this.rawSearch({ query, size, sort, from });
+                }
             }
             if (accountId) {
                 filter.push({ term: { accountId } });
@@ -95,7 +115,7 @@ class ElasticsearchService {
             const searchBody = {
                 from,
                 size,
-                sort: [{ date: 'desc' }],
+                sort,
             };
             if (must.length > 0 || filter.length > 0) {
                 searchBody.query = {
@@ -106,7 +126,7 @@ class ElasticsearchService {
                 };
             }
             else {
-                searchBody.query = { match_all: {} };
+                searchBody.query = query || { match_all: {} };
             }
             logger_1.logger.info({
                 searchBody: JSON.stringify(searchBody),
@@ -142,6 +162,40 @@ class ElasticsearchService {
             }
             logger_1.logger.error({ err: error }, `Failed to get email: ${emailId}`);
             throw error;
+        }
+    }
+    async rawSearch(params) {
+        const result = await this.client.search({
+            index: this.indexName,
+            query: params.query,
+            size: params.size,
+            sort: params.sort,
+            from: params.from,
+        });
+        const emails = result.hits.hits.map((hit) => ({
+            id: hit._id,
+            ...hit._source,
+        }));
+        const total = typeof result.hits.total === 'number' ? result.hits.total : result.hits.total?.value || 0;
+        return { emails, total };
+    }
+    async getHealth() {
+        try {
+            return await this.client.cluster.health();
+        }
+        catch (error) {
+            logger_1.logger.error({ err: error }, 'Failed to get cluster health');
+            throw error;
+        }
+    }
+    async ping() {
+        try {
+            const response = await this.client.ping();
+            return true;
+        }
+        catch (error) {
+            logger_1.logger.error({ err: error }, 'Elasticsearch ping failed');
+            return false;
         }
     }
     async close() {

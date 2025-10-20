@@ -8,12 +8,14 @@ class EmailController {
         this.esService = esService;
         this.vectorService = vectorService;
         this.aiService = aiService;
-        // Get all emails with pagination
         this.getEmails = (0, error_middleware_1.asyncHandler)(async (req, res) => {
             const page = parseInt(req.validatedData?.page || "1");
             const pageSize = parseInt(req.validatedData?.pageSize || "20");
             const from = (page - 1) * pageSize;
-            const result = await this.esService.searchEmails(undefined, undefined, undefined, undefined, from, pageSize);
+            const result = await this.esService.searchEmails({
+                from,
+                size: pageSize,
+            });
             res.status(200).json({
                 success: true,
                 data: {
@@ -27,11 +29,17 @@ class EmailController {
                 },
             });
         });
-        // Search and filter emails
         this.searchEmails = (0, error_middleware_1.asyncHandler)(async (req, res) => {
             const { q, account, folder, category, page = 1, pageSize = 20, } = req.validatedData || {};
             const from = (page - 1) * pageSize;
-            const result = await this.esService.searchEmails(q, account, folder, category, from, pageSize);
+            const result = await this.esService.searchEmails({
+                query: q,
+                accountId: account,
+                folder,
+                aiCategory: category,
+                from,
+                size: pageSize,
+            });
             logger_1.logger.info({
                 message: "Email search performed",
                 query: q,

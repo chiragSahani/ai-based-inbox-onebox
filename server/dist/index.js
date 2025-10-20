@@ -12,15 +12,16 @@ const vector_service_1 = require("./services/vector.service");
 const webhook_service_1 = require("./services/webhook.service");
 const imap_service_1 = require("./services/imap.service");
 const email_processor_service_1 = require("./services/email-processor.service");
+const notification_service_1 = require("./services/notification.service");
 // Import middlewares
 const security_middleware_1 = require("./middlewares/security.middleware");
-// import { apiLimiter } from './middlewares/ratelimit.middleware';
 const error_middleware_1 = require("./middlewares/error.middleware");
 const logger_middleware_1 = require("./middlewares/logger.middleware");
 // Import routes
 const email_routes_1 = require("./api/email.routes");
 const account_routes_1 = require("./api/account.routes");
 const health_routes_1 = require("./api/health.routes");
+const notification_routes_1 = require("./api/notification.routes");
 // Handle uncaught exceptions and unhandled rejections
 (0, error_middleware_1.handleUncaughtException)();
 (0, error_middleware_1.handleUnhandledRejection)();
@@ -32,6 +33,7 @@ class Application {
         this.aiService = new ai_service_1.AIService();
         this.vectorService = new vector_service_1.VectorService(this.aiService);
         this.webhookService = new webhook_service_1.WebhookService();
+        this.notificationService = new notification_service_1.NotificationService();
         this.emailProcessor = new email_processor_service_1.EmailProcessorService(this.esService, this.aiService, this.webhookService);
     }
     async initialize() {
@@ -54,20 +56,11 @@ class Application {
             this.app.use(logger_middleware_1.requestId);
             this.app.use(logger_middleware_1.httpLogger);
             this.app.use(logger_middleware_1.performanceMonitor);
-            // Trust proxy (for rate limiting behind load balancer)
             this.app.set('trust proxy', 1);
-            // API rate limiting - DISABLED
-            // this.app.use('/api', apiLimiter);
-            // Health check routes (no rate limit)
-            const healthRoutes = (0, health_routes_1.createHealthRoutes)(this.esService);
-            this.app.use('/api/health', healthRoutes);
-            // Account routes
-            const accountRoutes = (0, account_routes_1.createAccountRoutes)();
-            this.app.use('/api/accounts', accountRoutes);
-            // Email routes
-            const emailRoutes = (0, email_routes_1.createEmailRoutes)(this.esService, this.vectorService, this.aiService);
-            this.app.use('/api/emails', emailRoutes);
-            // Root endpoint
+            this.app.use('/api/health', (0, health_routes_1.createHealthRoutes)(this.esService));
+            this.app.use('/api/accounts', (0, account_routes_1.createAccountRoutes)());
+            this.app.use('/api/emails', (0, email_routes_1.createEmailRoutes)(this.esService, this.vectorService, this.aiService));
+            this.app.use('/api/notifications', (0, notification_routes_1.createNotificationRoutes)(this.notificationService));
             this.app.get('/', (req, res) => {
                 res.json({
                     success: true,
@@ -78,6 +71,7 @@ class Application {
                         accounts: '/api/accounts',
                         emails: '/api/emails',
                         search: '/api/emails/search',
+                        notifications: '/api/notifications',
                     },
                 });
             });
@@ -107,6 +101,7 @@ class Application {
                 imapService.on('email', async (email) => {
                     try {
                         await this.emailProcessor.processEmail(email);
+                        this.notificationService.notifyNewEmail(email.from, email.subject || '(No Subject)', email.id);
                     }
                     catch (error) {
                         logger_1.logger.error({ err: error }, 'Failed to process email from IMAP');

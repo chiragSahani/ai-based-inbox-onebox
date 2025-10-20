@@ -1,4 +1,4 @@
-import { AICategory } from '../types';
+import { AICategory } from "../types";
 export declare class AIService {
     private genAI;
     private model;

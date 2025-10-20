@@ -22,7 +22,11 @@ export class HealthController {
       timestamp: new Date().toISOString(),
       uptime: process.uptime(),
       environment: process.env.NODE_ENV || "development",
-      services: {},
+      services: {
+        elasticsearch: { status: "unknown" },
+        qdrant: { status: "unknown" },
+        imap: { status: "running" },
+      },
       system: {
         platform: os.platform(),
         arch: os.arch(),
@@ -42,9 +46,8 @@ export class HealthController {
       },
     };
 
-    // Check Elasticsearch
     try {
-      const esHealth = await this.esService["client"].cluster.health();
+      const esHealth = await this.esService.getHealth();
       health.services.elasticsearch = {
         status: "healthy",
         clusterStatus: esHealth.status,
@@ -57,13 +60,11 @@ export class HealthController {
       health.success = false;
     }
 
-    // Check Qdrant (if accessible)
     health.services.qdrant = {
       status: "unknown",
       message: "Health check not implemented",
     };
 
-    // Check IMAP services
     health.services.imap = {
       status: "running",
       message: "IMAP services are active",
@@ -74,17 +75,15 @@ export class HealthController {
     res.status(statusCode).json(health);
   });
 
-  // Readiness probe (for Kubernetes)
   readinessCheck = asyncHandler(async (req: Request, res: Response) => {
-    try {
-      // Check if Elasticsearch is ready
-      await this.esService["client"].ping();
+    const isReady = await this.esService.ping();
 
+    if (isReady) {
       res.status(200).json({
         success: true,
         message: "Service is ready",
       });
-    } catch (error) {
+    } else {
       res.status(503).json({
         success: false,
         message: "Service is not ready",
@@ -92,16 +91,13 @@ export class HealthController {
     }
   });
 
-  // Liveness probe (for Kubernetes)
   livenessCheck = asyncHandler(async (req: Request, res: Response) => {
-    // Simple check that the service is running
     res.status(200).json({
       success: true,
       message: "Service is alive",
     });
   });
 
-  // Metrics endpoint
   getMetrics = asyncHandler(async (req: Request, res: Response) => {
     const metrics = {
       timestamp: new Date().toISOString(),
@@ -114,7 +110,7 @@ export class HealthController {
       },
       cpu: process.cpuUsage(),
       eventLoop: {
-        lag: 0, // Can implement event loop lag monitoring
+        lag: 0,
       },
     };
 
