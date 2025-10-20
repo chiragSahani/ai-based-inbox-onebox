@@ -165,7 +165,7 @@ class Application {
       `);
     });
 
-    // Graceful shutdown
+   
     const shutdown = async () => {
       logger.info('Shutting down gracefully...');
 
@@ -173,12 +173,12 @@ class Application {
         logger.info('HTTP server closed');
       });
 
-      // Disconnect all IMAP services
+     
       for (const imapService of this.imapServices) {
         imapService.disconnect();
       }
 
-      // Close Elasticsearch connection
+    
       await this.esService.close();
 
       process.exit(0);

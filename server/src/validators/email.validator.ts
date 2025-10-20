@@ -58,7 +58,7 @@ export const validate = (schema: Joi.ObjectSchema) => {
       });
     }
 
-    // Replace req properties with validated and sanitized values
+    
     req.validatedData = value;
     next();
   };
