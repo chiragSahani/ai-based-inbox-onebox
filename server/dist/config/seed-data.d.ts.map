@@ -1,1 +1,0 @@
-{"version":3,"file":"seed-data.d.ts","sourceRoot":"","sources":["../../src/config/seed-data.ts"],"names":[],"mappings":"AAEA,MAAM,WAAW,WAAW;IAC1B,EAAE,EAAE,MAAM,CAAC;IACX,IAAI,EAAE,MAAM,CAAC;IACb,QAAQ,CAAC,EAAE,MAAM,CAAC,MAAM,EAAE,GAAG,CAAC,CAAC;CAChC;AAED,eAAO,MAAM,mBAAmB,EAAE,WAAW,EAyC5C,CAAC"}
