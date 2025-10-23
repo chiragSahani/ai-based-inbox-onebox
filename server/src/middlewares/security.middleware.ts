@@ -111,7 +111,7 @@ export const apiKeyValidation = (
     });
   }
 
-  // Validate API key (implement your own logic)
+  // Validate API key 
   const validApiKey = process.env.API_KEY;
 
   if (apiKey !== validApiKey) {
